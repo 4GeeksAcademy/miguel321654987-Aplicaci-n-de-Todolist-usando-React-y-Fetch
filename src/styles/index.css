@@ -1,11 +1,16 @@
-/* 
+/* Oculta el botón de eliminar por defecto */
+.boton-borrar {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none; /* Impide clics invisibles */
+}
 
-    You can write your own styles here...
-    
-    
-    ...Or you can use the import command to include 
-    other sylesheets into your bunde as well, e.j:
-    
-    import 'relative/path/to/stylesheet.scss';
+/* Muestra el botón cuando se pasa el ratón sobre el elemento <li> contenedor */
+.elemento-hover:hover .boton-borrar {
+  opacity: 1;
+  pointer-events: auto; /* Permite hacer clic cuando es visible */
+}
 
-*/
+.elemento-hover {
+  cursor: pointer;
+}
