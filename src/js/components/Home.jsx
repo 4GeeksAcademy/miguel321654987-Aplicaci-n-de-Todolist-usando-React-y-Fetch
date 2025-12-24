@@ -30,27 +30,21 @@ const Home = () => {
     // 2. EL POST SE HACE AQUÍ (AL PULSAR ENTER)
     const eventoKeyDown = async (event) => {
         if (event.key === 'Enter' && inputTemporal.trim() !== "") {
-            
-            // Creamos el objeto que la API espera
-            const nuevaTareaApi = {
-                label: inputTemporal,
-                is_done: false
-            };
 
             try {
                 const response = await fetch(`https://playground.4geeks.com/todo/todos/${USER_NAME}`, {
                     method: "POST",
-                    body: JSON.stringify(nuevaTareaApi),
-                    headers: { "Content-Type": "application/json" }
+                    body: JSON.stringify({
+                        label: inputTemporal,
+                        is_done: false
+                    }),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
                 });
 
-                if (!response.ok) throw new Error("Error al guardar la tarea");
-
-                const tareaCreada = await response.json();
-
-                // Actualizamos el estado con la tarea que devuelve la API (que ya tiene ID real)
-                setTareas([...tareas, tareaCreada]);
-                setInputTemporal('');
+                    setTareas([await response.json(),...tareas]);
+                    setInputTemporal('');
 
             } catch (error) {
                 console.error("Problema detectado:", error);
