@@ -3,111 +3,100 @@ import { useState } from 'react';
 
 
 const Home = () => {
-const [tareas, setTareas] = useState([]);
-const [inputTemporal, setInputTemporal] = useState('');
-const USER_NAME = "miguel321654987";
 
-useEffect(() => {
-    // 1. Intentamos obtener (GET) el usuario y sus tareas
-    fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`)
-        .then(resp => {
-            if (resp.ok) {
-                return resp.json(); // Si existe, pasamos al siguiente .then con los datos
-            } else if (resp.status === 404) {
-                // 2. Si NO existe, lanzamos un error para capturarlo y crear el usuario
-                throw new Error("USUARIO_NO_EXISTE");
-            } else {
-                throw new Error("ERROR_INESPERADO");
-            }
-        })
-        .then(data => {
-            console.log("Usuario existente, cargando tareas:", data.todos);
-            setTareas(data.todos || []);
-        })
-        .catch(error => {
-            // 3. Manejamos la creación si el error fue por falta de usuario
-            if (error.message === "USUARIO_NO_EXISTE") {
-                console.log("Creando usuario nuevo...");
-                fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" }
-                })
-                .then(respCrear => {
-                    if (respCrear.ok) {
-                        console.log("Usuario creado con éxito");
-                        setTareas([]); // Iniciamos con lista vacía
-                    }
-                })
-                .catch(err => console.log("Error al crear usuario:", err));
-            } else {
-                console.log("Error de red o servidor:", error);
-            }
-        });
-}, []);
+    const [tareas, setTareas] = useState([]);
+    const [inputTemporal, setInputTemporal] = useState('');
+    const USER_NAME = "miguel321654987";
+
+    useEffect(() => {
+
+        // GET PARA OBTENER EL USUARIO Y SUS TAREAS
+        fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`)
+            .then(response => {
+                console.log(response.ok);
+                console.log(response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log(data);
+                setTareas(data.todos);
+            })
+            .catch(error => {
+                console.error("Error de red/servidor o al crear usuario:", error);
+            });
+    }, []);
 
 
+    // HACER POST AL PULSAR ENTER PARA AÑADIR TAREA, Y VACIAR EL IMPUT
     const eventoChange = (event) => {
         setInputTemporal(event.target.value);
     };
 
-    // 2. EL POST SE HACE AQUÍ (AL PULSAR ENTER)
-   const eventoKeyDown = (event) => {
-    if (event.key === 'Enter' && inputTemporal.trim() !== "") {
-        
-        fetch(`https://playground.4geeks.com/todo/todos/${USER_NAME}`, {
-            method: "POST",
-            body: JSON.stringify({
-                label: inputTemporal,
-                is_done: false
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                // Si la respuesta no es 200/201, lanzamos error al .catch
-                throw new Error("No se pudo guardar la tarea");
-            }
-            return response.json(); // Convertimos la respuesta a JSON
-        })
-        .then(nuevaTarea => {
-            // Actualizamos el estado con la tarea que nos devuelve la API (que incluye su ID)
-            setTareas([nuevaTarea, ...tareas]);
-            // Limpiamos el input
-            setInputTemporal('');
-        })
-        .catch(error => {
-            console.error("Problema detectado:", error);
-        });
-    }
-};
+    const eventoKeyDown = (event) => {
+        if (event.key === 'Enter' && inputTemporal.trim() !== "") {
 
-
-   const borrarTarea = (todo_id) => {
-    // 1. Petición a la API para borrar por ID
-    fetch(`https://playground.4geeks.com/todo/todos/${todo_id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" }
-    })
-    .then(response => {
-        if (response.ok) {
-            // 2. Si el servidor confirma el borrado, actualizamos el estado local
-            const nuevasTareasFiltradas = tareas.filter(tarea => tarea.id !== todo_id);
-            setTareas(nuevasTareasFiltradas);
-            console.log(`Tarea ${todo_id} borrada con éxito`);
-        } else {
-            // Si la respuesta no es "ok" (ej. error 404 o 400)
-            throw new Error("No se pudo borrar la tarea en el servidor");
+            fetch(`https://playground.4geeks.com/todo/todos/${USER_NAME}`, {
+                method: "POST",
+                body: JSON.stringify({
+                    label: inputTemporal,
+                    is_done: false
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => {
+                    console.log(response.ok);
+                    console.log(response.status);
+                    return response.json();
+                })
+                .then(nuevaTarea => {
+                    console.log(nuevaTarea);
+                    setTareas([nuevaTarea, ...tareas]);
+                    setInputTemporal('');
+                })
+                .catch(error => {
+                    console.error("Problema detectado:", error);
+                });
         }
-    })
-    .catch(error => {
-        // Manejo de errores de red o errores lanzados con throw
-        console.error("Error de red al intentar borrar:", error);
-    });
-};
+    };
 
+    // PETICIÓN A LA API PARA ELIMINAR TAREA POR ID CON FILTER, SE BORRA CON BUTTON ONCLICK Y LUEGO SE ACTUALIZA
+    const borrarTarea = (todo_id) => {
 
+        fetch(`https://playground.4geeks.com/todo/todos/${todo_id}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+        })
+            .then(response => {
+                console.log(response.ok);
+                console.log(response.status);
+                const nuevaListaTareas = tareas.filter(tarea => tarea.id !== todo_id);
+                setTareas(nuevaListaTareas);
+            })
+            .catch(error => {
+                console.error("Error de red al intentar borrar:", error);
+            });
+    };
+
+    // PETICIÓN A LA API PARA ELIMINAR TODAS LAS TAREAS ID CON FILTER, SE BORRA CON BUTTON ONCLICK Y LUEGO SE ACTUALIZA
+    const vaciarListaTareas = (todo_id) => {
+
+        fetch(`https://playground.4geeks.com/todo/todos/${todo_id}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+        })
+            .then(response => {
+                console.log(response.ok);
+                console.log(response.status);
+                setTareas([]);
+            })
+            .catch(error => {
+                console.error("Error de red al intentar borrar:", error);
+            });
+    };
+
+    // CÓDIGO PARA HTML Y ESTILOS
     return (
         <div className="p-5 m-5 bg-body-secondary">
             <h1 className='text-center mb-5'>LISTA DE TAREAS</h1>
@@ -124,14 +113,22 @@ useEffect(() => {
                         />
                     </li>
                     {tareas.length > 0 ? (
-                        tareas.map((tarea) => (
-                            <li key={tarea.id} className="list-group-item d-flex justify-content-between align-items-center">
-                                <p className="m-0">{tarea.label}</p>
-                                <button className="btn btn-danger btn-sm" onClick={() => borrarTarea(tarea.id)}>
-                                    <i className="fa-solid fa-trash-can"></i>
+                        <>
+                            {tareas.map((tarea) => (
+                                <li key={tarea.id} className="list-group-item d-flex justify-content-between align-items-center elemento-hover">
+                                    <p className="m-0">{tarea.label}</p>
+                                    <button className="btn btn-danger btn-sm boton-borrar" onClick={() => borrarTarea(tarea.id)}>
+                                        <i className="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </li>
+                            ))}
+                            <div className="mt-2 p-1 d-flex justify-content-center">
+                                <button className="btn btn-warning  border-1 " onClick={vaciarListaTareas}>
+                                    <i className="fa-solid fa-trash-can me-2"></i>
+                                    Vaciar toda la lista
                                 </button>
-                            </li>
-                        ))
+                            </div>
+                        </>
                     ) : (
                         <li className="list-group-item"><p className="m-0">No hay tareas</p></li>
                     )}
