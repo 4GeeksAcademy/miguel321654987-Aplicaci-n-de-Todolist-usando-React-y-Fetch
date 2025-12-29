@@ -8,23 +8,32 @@ const Home = () => {
     const [inputTemporal, setInputTemporal] = useState('');
     const USER_NAME = "miguel321654987";
 
-    useEffect(() => {
 
-        // GET PARA OBTENER EL USUARIO Y SUS TAREAS
-        fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`)
-            .then(response => {
-                console.log(response.ok);
-                console.log(response.status);
-                return response.json();
+useEffect(() => {
+    // 1. Intentamos obtener el usuario
+    fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`)
+        .then(response => {
+            // Si la respuesta no es OK (ej. 404), lanzamos error para saltar al .catch
+            return response.ok ? response.json() : Promise.reject("Usuario no existe");
+        })
+        .then(data => {
+            // Si existía, cargamos sus tareas
+            setTareas(data.todos);
+        })
+        .catch(() => {
+            // 2. Si el usuario no existe, lo CREAMOS con un POST
+            fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
             })
-            .then(data => {
-                console.log(data);
-                setTareas(data.todos);
+            .then(response => response.json())
+            .then(() => {
+                // Usuario creado con éxito, inicializamos con lista vacía
+                setTareas([]);
             })
-            .catch(error => {
-                console.error("Error de red/servidor o al crear usuario:", error);
-            });
-    }, []);
+            .catch(error => console.error("Error al crear el usuario:", error));
+        });
+}, []);
 
 
     // HACER POST AL PULSAR ENTER PARA AÑADIR TAREA, Y VACIAR EL IMPUT
@@ -79,22 +88,24 @@ const Home = () => {
             });
     };
 
-    // PETICIÓN A LA API PARA ELIMINAR TODAS LAS TAREAS ID CON FILTER, SE BORRA CON BUTTON ONCLICK Y LUEGO SE ACTUALIZA
-    const vaciarListaTareas = (todo_id) => {
-
-        fetch(`https://playground.4geeks.com/todo/todos/${todo_id}`, {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" }
-        })
-            .then(response => {
-                console.log(response.ok);
-                console.log(response.status);
-                setTareas([]);
-            })
-            .catch(error => {
-                console.error("Error de red al intentar borrar:", error);
+    // ELIMINAR AL USUARIO, LO QUE ELIMINA TODAS SUS TAREAS. ACTUALIZAR CON setTareas Y REPETIR CREAR USUARIO PARA NUEVAS PETICIONES 
+   const vaciarListaTareas = () => {
+    fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => {
+        if (response.ok) {
+            setTareas([]);
+            return fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
             });
-    };
+        }
+    })
+    .catch(error => console.error("Error al vaciar la lista:", error));
+};
+
 
     // CÓDIGO PARA HTML Y ESTILOS
     return (
