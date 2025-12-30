@@ -14,7 +14,11 @@ const Home = () => {
     useEffect(() => {
         // 1. Intentamos obtener el usuario con GET
         const inicializarUsuario = async () => await fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`)
-            .then(response => response.json())
+            .then(response => {
+                console.log(response.ok);
+                console.log(response.status);
+                return response.json();
+            })
             .then(data => {
                 setTareas(data.todos);
             })
@@ -24,7 +28,11 @@ const Home = () => {
                     method: "POST",
                     headers: { "Content-Type": "application/json" }
                 })
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log(response.ok);
+                        console.log(response.status);
+                        return response.json();
+                    })
                     .then(data => {
                         setTareas(data.todos);
                     })
@@ -91,13 +99,16 @@ const Home = () => {
 
 
     // ELIMINAR USUARIO, LO QUE ELIMINA TODAS LAS TAREAS EN LUGAR DE IR UNA A UNA. ACTUALIZAR FRONT-END CON setTareas Y REPETIR CREAR USUARIO PARA NUEVAS PETICIONES 
-    
+
     const vaciarListaTareas = async () => await fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" }
     })
         .then(response => {
             if (response.ok) {
+                console.log(response.ok);
+                console.log(response.status);
+                console.log("Se han eliminado todas las tareas")
                 setTareas([]);
                 return fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
                     method: "POST",
