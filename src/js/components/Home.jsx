@@ -6,34 +6,36 @@ const Home = () => {
 
     const [tareas, setTareas] = useState([]);
     const [inputTemporal, setInputTemporal] = useState('');
+
     const USER_NAME = "miguel321654987";
 
+    //useEffect Ejecuta peticiones solo una vez, justo después del primer renderizado
 
-useEffect(() => {
-    // 1. Intentamos obtener el usuario
-    fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`)
-        .then(response => {
-            // Si la respuesta no es OK (ej. 404), lanzamos error para saltar al .catch
-            return response.ok ? response.json() : Promise.reject("Usuario no existe");
-        })
-        .then(data => {
-            // Si existía, cargamos sus tareas
-            setTareas(data.todos);
-        })
-        .catch(() => {
-            // 2. Si el usuario no existe, lo CREAMOS con un POST
-            fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" }
-            })
+    useEffect(() => {
+        // 1. Intentamos obtener el usuario con GET
+        const inicializarUsuario = async () => await fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`)
             .then(response => response.json())
-            .then(() => {
-                // Usuario creado con éxito, inicializamos con lista vacía
-                setTareas([]);
+            .then(data => {
+                setTareas(data.todos);
             })
-            .catch(error => console.error("Error al crear el usuario:", error));
-        });
-}, []);
+            .catch(() => {
+                // 2. Si el usuario no existe, lo CREAMOS con un POST
+                const crearUsuario = async () => await fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        setTareas(data.todos);
+                    })
+                    .catch(error => console.error("Error al crear el usuario:", error));
+
+                crearUsuario()
+            });
+
+
+        inicializarUsuario();
+    }, []);
 
 
     // HACER POST AL PULSAR ENTER PARA AÑADIR TAREA, Y VACIAR EL IMPUT
@@ -44,7 +46,7 @@ useEffect(() => {
     const eventoKeyDown = (event) => {
         if (event.key === 'Enter' && inputTemporal.trim() !== "") {
 
-            fetch(`https://playground.4geeks.com/todo/todos/${USER_NAME}`, {
+            const crearTarea = async () => await fetch(`https://playground.4geeks.com/todo/todos/${USER_NAME}`, {
                 method: "POST",
                 body: JSON.stringify({
                     label: inputTemporal,
@@ -61,51 +63,50 @@ useEffect(() => {
                 })
                 .then(nuevaTarea => {
                     console.log(nuevaTarea);
-                    setTareas([nuevaTarea, ...tareas]);
+                    setTareas([...tareas, nuevaTarea]);
                     setInputTemporal('');
                 })
                 .catch(error => {
                     console.error("Problema detectado:", error);
                 });
+            crearTarea()
         }
     };
 
     // PETICIÓN A LA API PARA ELIMINAR TAREA POR ID CON FILTER, SE BORRA CON BUTTON ONCLICK Y LUEGO SE ACTUALIZA
-    const borrarTarea = (todo_id) => {
 
-        fetch(`https://playground.4geeks.com/todo/todos/${todo_id}`, {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" }
-        })
-            .then(response => {
-                console.log(response.ok);
-                console.log(response.status);
-                const nuevaListaTareas = tareas.filter(tarea => tarea.id !== todo_id);
-                setTareas(nuevaListaTareas);
-            })
-            .catch(error => {
-                console.error("Error de red al intentar borrar:", error);
-            });
-    };
-
-    // ELIMINAR AL USUARIO, LO QUE ELIMINA TODAS SUS TAREAS. ACTUALIZAR CON setTareas Y REPETIR CREAR USUARIO PARA NUEVAS PETICIONES 
-   const vaciarListaTareas = () => {
-    fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
+    const borrarTarea = async (todo_id) => await fetch(`https://playground.4geeks.com/todo/todos/${todo_id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" }
     })
-    .then(response => {
-        if (response.ok) {
-            setTareas([]);
-            return fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" }
-            });
-        }
-    })
-    .catch(error => console.error("Error al vaciar la lista:", error));
-};
+        .then(response => {
+            console.log(response.ok);
+            console.log(response.status);
+            const nuevaListaTareas = tareas.filter(tarea => tarea.id !== todo_id);
+            setTareas(nuevaListaTareas);
+        })
+        .catch(error => {
+            console.error("Error de red al intentar borrar:", error);
+        });
 
+
+    // ELIMINAR USUARIO, LO QUE ELIMINA TODAS LAS TAREAS EN LUGAR DE IR UNA A UNA. ACTUALIZAR FRONT-END CON setTareas Y REPETIR CREAR USUARIO PARA NUEVAS PETICIONES 
+    
+    const vaciarListaTareas = async () => await fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" }
+    })
+        .then(response => {
+            if (response.ok) {
+                setTareas([]);
+                return fetch(`https://playground.4geeks.com/todo/users/${USER_NAME}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                });
+            }
+        })
+        .catch(error => console.error("Error al vaciar la lista:", error)
+        );
 
     // CÓDIGO PARA HTML Y ESTILOS
     return (
@@ -134,7 +135,7 @@ useEffect(() => {
                                 </li>
                             ))}
                             <div className="mt-2 p-1 d-flex justify-content-center">
-                                <button className="btn btn-warning  border-1 " onClick={vaciarListaTareas}>
+                                <button className="btn btn-warning  border-1 " onClick={() => vaciarListaTareas()}>
                                     <i className="fa-solid fa-trash-can me-2"></i>
                                     Vaciar toda la lista
                                 </button>
